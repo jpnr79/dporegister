@@ -1,0 +1,40 @@
+CREATE TABLE IF NOT EXISTS `glpi_plugin_dporegister_processings` (
+    `id` int(11) NOT NULL auto_increment,
+    `date` datetime default NULL,
+    `date_creation` datetime default NULL,
+    `users_id_recipient` int(11) default NULL COMMENT 'RELATION to glpi_users (id)',
+    `date_mod` datetime default NULL,
+    `users_id_lastupdater` int(11) default NULL COMMENT 'RELATION to glpi_users (id)',
+    `entities_id` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_entities (id)',
+    `is_recursive` tinyint(1) NOT NULL default '0',
+    `is_deleted` tinyint(1) NOT NULL default '0',
+    `standard` varchar(250) default NULL, 
+    `plugin_dporegister_lawfulbasismodels_id` int(11) default NULL COMMENT 'RELATION to glpi_plugin_dporegister_lawfulbasismodels (id)',
+    `name` varchar(255) collate utf8_unicode_ci default NULL,
+    `purpose` varchar(255) collate utf8_unicode_ci default NULL,
+    `status` int(11) NOT NULL default '1' COMMENT 'Default status to INCOMING',
+    `is_compliant` tinyint(1) NOT NULL default '0',
+    `pia_required` tinyint(1) NOT NULL default '0',
+    `pia_status` int(11) NOT NULL default '0',
+    PRIMARY KEY  (`id`),
+    KEY `name` (`name`),
+    KEY `status` (`status`),
+    KEY `is_compliant` (`is_compliant`)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `glpi_plugin_dporegister_processing_personaldatacategories` (
+    `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `processings_id` int(11) NOT NULL DEFAULT 0 COMMENT 'RELATION to glpi_plugins_dporegister_processings (id)',
+    `personaldatacategories_id` int(11) NOT NULL DEFAULT 0 COMMENT 'RELATION to glpi_plugins_dporegister_personaldatacategories (id)',
+    `comment` varchar(250) NOT NULL DEFAULT '',
+    `retentionschedule_contract` tinyint(1) NOT NULL DEFAULT 0,
+    `retentionschedule_value` int(11) NOT NULL DEFAULT 0,
+    `retentionschedule_scale` char(1) NOT NULL DEFAULT 'y',
+    `retentionschedule_aftercontract` tinyint(1) NOT NULL DEFAULT 0,
+    `source` varchar(3) DEFAULT NULL,
+    `destination` varchar(250) DEFAULT NULL,
+    `location` varchar(250) DEFAULT NULL,
+    `thirdcountriestransfert` tinyint(1) NOT NULL DEFAULT 0,
+    `thirdcountriestransfert_value` varchar(160) NOT NULL DEFAULT '',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

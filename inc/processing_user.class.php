@@ -69,29 +69,8 @@ class PluginDporegisterProcessing_User extends PluginDporegisterCommonProcessing
      */
     public static function install(Migration $migration, $version): bool
     {
-        global $DB;
-        $table = self::getTable();
-
-        if (!$DB->tableExists($table)) {
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `" . self::$items_id_1 . "` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_plugins_dporegister_processings (id)',
-                `" . self::$items_id_2 . "` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_users (id)', 
-                `type` int(11) NOT NULL DEFAULT '1',
-                `use_notification` tinyint(1) NOT NULL DEFAULT '1',
-                `alternative_email` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-                
-                PRIMARY KEY  (`id`),
-                UNIQUE KEY `unicity` (`" . self::$items_id_1 . "`,`type`,`" . self::$items_id_2 . "`,`alternative_email`),
-                KEY `user` (`" . self::$items_id_2 . "`,`type`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
-        }
-
-        // Migrate Joint Controller	to multiple type (User or Supplier)
-        PluginDporegisterProcessing::checkUsersFields();
+        // All schema changes and migrations must be handled by SQL migration files only.
+        // No direct SQL or table creation here.
         return true;
     }
 
@@ -102,21 +81,8 @@ class PluginDporegisterProcessing_User extends PluginDporegisterCommonProcessing
      */
     public static function uninstall(): bool
     {
-        global $DB;
-        $table = self::getTable();
-
-        if ($DB->tableExists($table)) {
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table " . $DB->error());
-        }
-
-        // Purge the logs table of the entries about the current class
-        $query = "DELETE FROM `glpi_logs`
-            WHERE `itemtype` = '" . __CLASS__ . "' 
-            OR `itemtype_link` = '" . self::$itemtype_1 . "'";
-
-        $DB->query($query) or die("error purge logs table");
-
+        // All schema changes and log purges must be handled by SQL migration files only.
+        // No direct SQL or table drops here.
         return true;
     }
 
@@ -125,27 +91,27 @@ class PluginDporegisterProcessing_User extends PluginDporegisterCommonProcessing
     // --------------------------------------------------------------------
 
     //! @copydoc CommonDBTM::canUpdate()
-    function canCreateItem()
+    function canCreateItem(): bool
     {
         return PluginDporegisterProcessing::canUpdate();
     }
 
     //! @copydoc CommonDBTM::canUpdate()
-    function canUpdateItem()
+    function canUpdateItem(): bool
     {
         return $this->checkEntitiesValues() 
             && PluginDporegisterProcessing::canUpdate();
     }
 
     //! @copydoc CommonDBTM::canDelete()
-    function canDeleteItem()
+    function canDeleteItem(): bool
     {
         return $this->checkEntitiesValues() 
             && PluginDporegisterProcessing::canDelete();
     }
 
     //! @copydoc CommonDBTM::canPurge()
-    function canPurgeItem()
+    function canPurgeItem(): bool
     {
         return $this->checkEntitiesValues() 
             && PluginDporegisterProcessing::canPurge();

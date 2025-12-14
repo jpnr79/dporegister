@@ -59,40 +59,8 @@ class PluginDporegisterLawfulBasisModel extends CommonDropdown
      */
     public static function install(Migration $migration, $version)
     {
-        global $DB;
-        $table = self::getTable();
-
-        if (!$DB->tableExists($table)) {
-
-            $migration->displayMessage(sprintf(__("Installing %s"), $table));
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `name` varchar(255) collate utf8_unicode_ci default NULL,
-                `content` varchar(1024) collate utf8_unicode_ci default NULL,
-                `comment` text collate utf8_unicode_ci,
-                `is_gdpr` tinyint(1) NOT NULL default 0,
-                `entities_id` int(11) NOT NULL default '0',
-                `is_recursive` tinyint(1) NOT NULL default '1',
-                `date_creation` datetime default NULL,
-                `date_mod` datetime default NULL,
-                
-                PRIMARY KEY  (`id`),
-                KEY `name` (`name`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
-        }
-
-        // Check doesn't contain any GDPR lawfulbasis
-        if (!countElementsInTable($table, ['is_gdpr = 1'])) {
-
-            $gdprValues = require(PLUGIN_DPOREGISTER_ROOT . '/data/lawfulbasismodel.php');
-            self::insertGDPRValuesInDatabase($gdprValues);
-        }
-
-        // Check old version for migrations/upgrade
-        PluginDporegisterProcessing::checkLawfulbasisField();
+        // All schema changes and data inserts must be handled by SQL migration files only.
+        // No direct SQL, table creation, or data population here.
         return true;
     }
 
@@ -103,16 +71,8 @@ class PluginDporegisterLawfulBasisModel extends CommonDropdown
      */
     public static function uninstall()
     {
-        global $DB;
-        $table = self::getTable();
-
-        if ($DB->tableExists($table)) {
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table");
-        }
-
-        $query = "DELETE FROM `glpi_logs` WHERE `itemtype` = '" . __CLASS__ . "'";
-        $DB->query($query) or die("error purge logs table");
+        // All schema changes and log purges must be handled by SQL migration files only.
+        // No direct SQL or table drops here.
         return true;
     }
 
@@ -121,7 +81,7 @@ class PluginDporegisterLawfulBasisModel extends CommonDropdown
     // --------------------------------------------------------------------
 
     //! @copydoc CommonDBTM::canUpdateItem()
-    function canUpdateItem()
+    function canUpdateItem(): bool
     {
 
         // If it's from GDPR, prevent update
@@ -131,7 +91,7 @@ class PluginDporegisterLawfulBasisModel extends CommonDropdown
     }
 
     //! @copydoc CommonDBTM::canDeleteItem()
-    function canDeleteItem()
+    function canDeleteItem(): bool
     {
 
         // If it's from GDPR, prevent delete
@@ -141,7 +101,7 @@ class PluginDporegisterLawfulBasisModel extends CommonDropdown
     }
 
     //! @copydoc CommonDBTM::canPurgeItem()
-    function canPurgeItem()
+    function canPurgeItem(): bool
     {
 
         // If it's from GDPR, prevent purge

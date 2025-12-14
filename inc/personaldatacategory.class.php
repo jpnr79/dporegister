@@ -61,33 +61,28 @@ class PluginDporegisterPersonalDataCategory extends CommonTreeDropdown
     {
         global $DB;
         $table = self::getTable();
-
         if (!$DB->tableExists($table)) {
-
             $migration->displayMessage(sprintf(__("Installing %s"), $table));
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `name` varchar(255) collate utf8_unicode_ci default NULL,
-                `completename` text collate utf8_unicode_ci default NULL,
-                `level` int(11) NOT NULL default '0',
-                `comment` text collate utf8_unicode_ci,
-                `".self::getForeignKeyField()."` int(11) NOT NULL default '0',
-                `entities_id` int(11) NOT NULL default '0',
-                `is_recursive` tinyint(1) NOT NULL default '1',
-                `ancestors_cache` longtext collate utf8_unicode_ci default NULL,
-                `sons_cache` longtext collate utf8_unicode_ci default NULL,
-                `is_sensible` tinyint(1) default '0',
-                `date_creation` datetime default NULL,
-                `date_mod` datetime default NULL,
-                
+            $foreignKey = self::getForeignKeyField();
+            $sql = "CREATE TABLE `$table` (
+                `id` int(11) UNSIGNED NOT NULL auto_increment,
+                `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `completename` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `level` int(11) NOT NULL DEFAULT '0',
+                `comment` text COLLATE utf8mb4_unicode_ci,
+                `$foreignKey` int(11) UNSIGNED NOT NULL DEFAULT '0',
+                `entities_id` int(11) UNSIGNED NOT NULL DEFAULT '0',
+                `is_recursive` tinyint(1) NOT NULL DEFAULT '1',
+                `ancestors_cache` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `sons_cache` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+                `is_sensible` tinyint(1) DEFAULT '0',
+                `date_creation` TIMESTAMP NULL DEFAULT NULL,
+                `date_mod` TIMESTAMP NULL DEFAULT NULL,
                 PRIMARY KEY  (`id`),
                 KEY `name` (`name`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
+            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
+            $migration->executeMigration($sql);
         }
-
         return true;
     }
 
@@ -100,18 +95,13 @@ class PluginDporegisterPersonalDataCategory extends CommonTreeDropdown
     {
         global $DB;
         $table = self::getTable();
-
         if ($DB->tableExists($table)) {
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table");
+            $migration = new Migration('uninstall');
+            $sql = "DROP TABLE IF EXISTS `$table`";
+            $migration->executeMigration($sql);
         }
-
         // Purge the logs table of the entries about the current class
-        $query = "DELETE FROM `glpi_logs`
-            WHERE `itemtype` = '" . __CLASS__ . "'";
-            
-        $DB->query($query) or die ("error purge logs table");
-
+        $DB->delete('glpi_logs', [ 'itemtype' => __CLASS__ ]);
         return true;
     }
 

@@ -285,10 +285,16 @@ class PluginDporegisterProfile extends Profile
             }
         }
 
-        $profiles = $DB->request("SELECT *
-            FROM `glpi_profilerights`
-            WHERE `profiles_id`='" . $_SESSION['glpiactiveprofile']['id'] . "'
-            AND `name` LIKE 'plugin_dporegister_%'");
+
+        $profiles = $DB->request(
+            'glpi_profilerights',
+            [
+                'profiles_id' => $_SESSION['glpiactiveprofile']['id'],
+                'name'        => [
+                    'LIKE', 'plugin_dporegister_%'
+                ]
+            ]
+        );
 
         foreach ($profiles as $prof) {
 

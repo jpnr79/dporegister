@@ -58,25 +58,7 @@ class PluginDporegisterSecurityMesure extends CommonDropdown
      */
     public static function install(Migration $migration, $version)
     {
-        global $DB;
-        $table = self::getTable();
-
-        if (!$DB->tableExists($table)) {
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `name` varchar(255) collate utf8_unicode_ci default NULL,
-                `comment` text collate utf8_unicode_ci,
-                `entities_id` int(11) NOT NULL default '0',
-                `date_creation` datetime default NULL,
-                `date_mod` datetime default NULL,
-                
-                PRIMARY KEY  (`id`),
-                KEY `name` (`name`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
-        }
+        // All schema changes must be handled by SQL migration files only in GLPI 11+.
         return true;
     }
 
@@ -87,16 +69,7 @@ class PluginDporegisterSecurityMesure extends CommonDropdown
      */
     public static function uninstall()
     {
-        global $DB;
-        $table = self::getTable();
-
-        if ($DB->tableExists($table)) {
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table");
-        }
-
-        $query = "DELETE FROM `glpi_logs` WHERE `itemtype` = '" . __CLASS__ . "'";
-        $DB->query($query) or die ("error purge logs table");
+        // All schema changes and log purges must be handled by SQL migration files or GLPI APIs only in GLPI 11+.
         return true;
     }
 

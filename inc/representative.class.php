@@ -49,17 +49,17 @@ class PluginDporegisterRepresentative extends CommonDBTM
     /**
      * @var array
      */
-    protected $updates = [];
+    public $updates = [];
     /**
      * @var array
      */
-    protected $oldvalues = [];
+    public $oldvalues = [];
 
     /**
      * Return the table name for this class
      * @return string
      */
-    public static function getTable(): string
+    public static function getTable($classname = null): string
     {
         return 'glpi_plugin_dporegister_representatives';
     }
@@ -85,9 +85,9 @@ class PluginDporegisterRepresentative extends CommonDBTM
             return false;
         }
 
-    public static function canView() { return true; }
-    public static function canUpdate() { return true; }
-    public static function canCreate() { return true; }
+    public static function canView(): bool { return true; }
+    public static function canUpdate(): bool { return true; }
+    public static function canCreate(): bool { return true; }
 
     public function initForm($id, $options = []) {}
     public function showFormHeader($options = []) {}
@@ -112,24 +112,8 @@ class PluginDporegisterRepresentative extends CommonDBTM
      */
     public static function install(Migration $migration, $version): bool
     {
-        global $DB;
-        $table = method_exists(get_parent_class(self::class), 'getTable') ? parent::getTable() : 'glpi_plugin_dporegister_representatives';
-
-        if (!$DB->tableExists($table)) {
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `entities_id` int(11) COMMENT 'RELATION to glpi_entities (id)',
-                `users_id_representative` int(11) default NULL COMMENT 'RELATION to glpi_users (id)',
-                `users_id_dpo` int(11) default NULL COMMENT 'RELATION to glpi_users (id)',
-                `corporatename` varchar(250) default NULL,
-                
-                PRIMARY KEY  (`id`),
-                UNIQUE `entities_id` (`entities_id`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
-        }
+        // All schema changes must be handled by SQL migration files only.
+        // No direct SQL or table creation here.
         return true;
     }
 
@@ -140,13 +124,8 @@ class PluginDporegisterRepresentative extends CommonDBTM
      */
     public static function uninstall(): bool
     {
-        global $DB;
-        $table = method_exists(get_parent_class(self::class), 'getTable') ? parent::getTable() : 'glpi_plugin_dporegister_representatives';
-
-        if ($DB->tableExists($table)) {
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table");
-        }
+        // All schema changes must be handled by SQL migration files only.
+        // No direct SQL or table drops here.
         return true;
     }
 
@@ -203,14 +182,14 @@ class PluginDporegisterRepresentative extends CommonDBTM
      * @param Integer $ID
     * @param array $options
      */
-    function showForm(int $ID, array $options = array())
+    function showForm($ID, array $options = array())
     {
         global $HEADER_LOADED;
         $HEADER_LOADED = true;
 
         $colsize1 = '13%';
         $colsize2 = '29%';
-        $colsize3 = '13%';
+            $colsize3 = '13%';
         $colsize4 = '45%';
 
         if ($ID >= 0) {

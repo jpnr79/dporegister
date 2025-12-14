@@ -67,35 +67,7 @@ class PluginDporegisterProcessing_PersonalDataCategory extends CommonDBRelation
     */
     public static function install(Migration $migration, $version)
     {
-        global $DB;
-        $table = self::getTable();
-        
-        if (!$DB->tableExists($table)) {
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `".self::$items_id_1."` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_plugins_dporegister_processings (id)',
-                `".self::$items_id_2."` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_plugins_dporegister_personaldatacategories (id)',
-                `comment` varchar(250) NOT NULL default '',
-
-                `retentionschedule_contract` tinyint(1) NOT NULL default '0',
-                `retentionschedule_value` int(11) NOT NULL default '0',
-                `retentionschedule_scale` char(1) NOT NULL default 'y',
-                `retentionschedule_aftercontract` tinyint(1) NOT NULL default '0',
-
-                `source` char(3) NULL,
-                `destination` varchar(250) NULL,
-
-                `location` varchar(250) NULL,
-
-                `thirdcountriestransfert` tinyint(1) NOT NULL default '0',
-                `thirdcountriestransfert_value` varchar(160) NOT NULL default '',
-                
-                PRIMARY KEY  (`id`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
-        }
+        // All schema changes must be handled by SQL migration files only in GLPI 11+.
         return true;
     }
 
@@ -110,17 +82,23 @@ class PluginDporegisterProcessing_PersonalDataCategory extends CommonDBRelation
         $table = self::getTable();
 
         if ($DB->tableExists($table)) {
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table " . $DB->error());
+            include_once(GLPI_ROOT . '/inc/migration.class.php');
+            $migration = new Migration(110000);
+            $migration->dropTable($table);
+            $migration->executeMigration();
         }
 
         // Purge the logs table of the entries about the current class
-        $query = "DELETE FROM `glpi_logs`
-            WHERE `itemtype` = '" . __CLASS__ . "' 
-            OR `itemtype_link` = '" . self::$itemtype_1 . "' 
-            OR `itemtype_link` = '" . self::$itemtype_2 . "'";
-            
-        $DB->query($query) or die ("error purge logs table");
+        $DB->delete(
+            'glpi_logs',
+            [
+                'OR' => [
+                    ['itemtype' => __CLASS__],
+                    ['itemtype_link' => self::$itemtype_1],
+                    ['itemtype_link' => self::$itemtype_2]
+                ]
+            ]
+        );
 
         return true;
     }

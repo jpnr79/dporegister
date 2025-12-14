@@ -68,22 +68,7 @@ class PluginDporegisterProcessing_IndividualsCategory extends CommonDBRelation
     public static function install(Migration $migration, $version)
     {
 
-        global $DB;
-        $table = self::getTable();
-        if (!$DB->tableExists($table)) {
-
-            $migration->displayMessage(sprintf(__("Installing %s"), $table));
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `" . self::$items_id_1 . "` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_plugins_dporegister_processings (id)',
-                `" . self::$items_id_2 . "` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_plugins_dporegister_personaldatacategories (id)',
-
-                PRIMARY KEY  (`id`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
-        }
+        // All schema changes must be handled by SQL migration files only in GLPI 11+.
         return true;
     }
 
@@ -94,22 +79,7 @@ class PluginDporegisterProcessing_IndividualsCategory extends CommonDBRelation
      */
     public static function uninstall()
     {
-        global $DB;
-        $table = self::getTable();
-
-        if ($DB->tableExists($table)) {
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table " . $DB->error());
-        }
-
-        // Purge the logs table of the entries about the current class
-        $query = "DELETE FROM `glpi_logs`
-            WHERE `itemtype` = '" . __CLASS__ . "' 
-            OR `itemtype_link` = '" . self::$itemtype_1 . "' 
-            OR `itemtype_link` = '" . self::$itemtype_2 . "'";
-            
-        $DB->query($query) or die ("error purge logs table");
-
+        // All schema changes and log purges must be handled by SQL migration files or GLPI APIs only in GLPI 11+.
         return true;
     }
 

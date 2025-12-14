@@ -1,4 +1,7 @@
 <?php
+// Stub for GLPI 11+ content templates compatibility if not present
+require_once __DIR__ . '/stub.contenttemplates.class.php';
+use Glpi\ContentTemplates\Parameters\CommonITILObjectParameters;
  /*
  -------------------------------------------------------------------------
  DPO Register plugin for GLPI
@@ -42,6 +45,23 @@ if (!defined('GLPI_ROOT')) {
 
 class PluginDporegisterProcessing extends CommonITILObject
 {
+    /**
+     * Return the link class name for items associated with this processing object.
+     * Required by CommonITILObject in GLPI 11+.
+     */
+    public static function getItemLinkClass(): string {
+        // Return a default or empty string if not used by this plugin
+        return '';
+    }
+
+    /**
+     * Return an instance of the content templates parameters class.
+     * Required by CommonITILObject in GLPI 11+.
+     */
+    public static function getContentTemplatesParametersClassInstance(): CommonITILObjectParameters {
+        // Return a stub instance to satisfy the interface
+        return new CommonITILObjectParameters();
+    }
     static $rightname = 'plugin_dporegister_processing';
     public $dohistory = true;
     protected $usenotepad = true;
@@ -69,14 +89,14 @@ class PluginDporegisterProcessing extends CommonITILObject
     // Compatibility stubs for static calls from templates/plugins
     public static function getStatusIcon($s = null) { return ''; }
     public static function getStatus($s = null) { return ''; }
-    public static function canView() { return true; }
-    public static function canCreate() { return true; }
-    public static function canUpdate() { return true; }
-    public static function canDelete() { return true; }
-    public static function canPurge() { return true; }
-    public static function getSearchURL() { return ''; }
-    public static function getFormURLWithID($id) { return ''; }
-    public static function dropdownStatus() { return []; }
+    public static function canView(): bool { return true; }
+    public static function canCreate(): bool { return true; }
+    public static function canUpdate(): bool { return true; }
+    public static function canDelete(): bool { return true; }
+    public static function canPurge(): bool { return true; }
+    public static function getSearchURL($full = true) { return ''; }
+    public static function getFormURLWithID($id = 0, $full = true) { return ''; }
+    public static function dropdownStatus(array $options = []) { return []; }
     public static function getActorIcon($t = null) { return ''; }
     public static function getActorFieldNameType($t = null) { return ''; }
     public static function getForeignKeyFieldName() { return 'plugin_dporegister_processing_id'; }
@@ -86,8 +106,8 @@ class PluginDporegisterProcessing extends CommonITILObject
     public function initForm($id = 0, $opts = []) { }
     public function showFormHeader($opts = []) { }
     public function showFormButtons($opts = []) { }
-    public function addDefaultFormTab() { }
-    public function getType() { return self::class; }
+    public function addDefaultFormTab(array &$ong) { }
+    public static function getType() { return self::class; }
 
     // --------------------------------------------------------------------
     //  PLUGIN MANAGEMENT - DATABASE INITIALISATION
@@ -103,62 +123,77 @@ class PluginDporegisterProcessing extends CommonITILObject
      */
     public static function install(Migration $migration, $version)
     {
-        global $DB;
         $table = self::getTable();
-
+        global $DB;
         if (!$DB->tableExists($table)) {
-
             $migration->displayMessage(sprintf(__("Installing %s"), $table));
+            $migration->executeMigration('empty-1.0.0.sql');
+        }
+        // Check if 'entities_id' and 'type' columns exist in glpi_displaypreferences
+        $columns = $DB->listFields('glpi_displaypreferences');
+        $has_entities_id = array_key_exists('entities_id', $columns);
+        $has_type = array_key_exists('type', $columns);
 
-            $lawfulbasisTable = PluginDporegisterLawfulBasisModel::getTable();
-            $lawfulbasisForeignKey = PluginDporegisterLawfulBasisModel::getForeignKeyField();
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `date` datetime default NULL,
-                `date_creation` datetime default NULL,
-                `users_id_recipient` int(11) default NULL COMMENT 'RELATION to glpi_users (id)',
-                `date_mod` datetime default NULL,
-                `users_id_lastupdater` int(11) default NULL COMMENT 'RELATION to glpi_users (id)',
-                `entities_id` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_entities (id)',
-                `is_recursive` tinyint(1) NOT NULL default '0',
-                `is_deleted` tinyint(1) NOT NULL default '0',
-
-                `standard` varchar(250) default NULL, 
-                `$lawfulbasisForeignKey` int(11) default NULL COMMENT 'RELATION to $lawfulbasisTable (id)',              
-
-                `name` varchar(255) collate utf8_unicode_ci default NULL,
-                `purpose` varchar(255) collate utf8_unicode_ci default NULL,
-                `status` int(11) NOT NULL default '1' COMMENT 'Default status to INCOMING',
-
-                `is_compliant` tinyint(1) NOT NULL default '0',
-                `pia_required` tinyint(1) NOT NULL default '0',
-                `pia_status` int(11) NOT NULL default '0',
-                
-                PRIMARY KEY  (`id`),
-                KEY `name` (`name`),
-                KEY `status` (`status`),
-                KEY `is_compliant` (`is_compliant`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            // `users_id_jointcontroller` int(11) default NULL COMMENT 'RELATION to glpi_users (id)',
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
-
-            // Insert default display preferences for Processing objects
-            $query = "INSERT INTO `glpi_displaypreferences` (`itemtype`, `num`, `rank`, `users_id`) VALUES
-                ('" . __CLASS__ . "', 1, 1, 0),
-                ('" . __CLASS__ . "', 2, 2, 0),
-                ('" . __CLASS__ . "', 3, 3, 0),
-                ('" . __CLASS__ . "', 4, 4, 0),
-                ('" . __CLASS__ . "', 5, 5, 0),
-                ('" . __CLASS__ . "', 7, 7, 0),
-                ('" . __CLASS__ . "', 8, 8, 0),
-                ('" . __CLASS__ . "', 9, 9, 0)";
-
-            $DB->query($query) or die("populating display preferences " . $DB->error());
+        $displayPrefs = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $pref = ['itemtype' => __CLASS__, 'num' => $i, 'rank' => $i, 'users_id' => 0];
+            if ($has_entities_id) $pref['entities_id'] = 0;
+            // Always add 'type' for unicity, even if not in columns, as some old schemas require it for the unique key
+            $pref['type'] = 'central';
+            $displayPrefs[] = $pref;
+        }
+        foreach ([7, 8, 9] as $i) {
+            $pref = ['itemtype' => __CLASS__, 'num' => $i, 'rank' => $i, 'users_id' => 0];
+            if ($has_entities_id) $pref['entities_id'] = 0;
+            $pref['type'] = 'central';
+            $displayPrefs[] = $pref;
         }
 
+        foreach ($displayPrefs as $pref) {
+            if (!$has_type) {
+                // Old schema: type is not a column, but uniqueness is on (itemtype, num, users_id, type='central')
+                // Check for existing row with type='central' using a custom query
+                $where = [
+                    'itemtype' => $pref['itemtype'],
+                    'num'      => $pref['num'],
+                    'users_id' => $pref['users_id'],
+                ];
+                $iterator = $DB->request([
+                    'FROM'  => 'glpi_displaypreferences',
+                    'WHERE' => $where
+                ]);
+                $exists = $iterator->valid();
+                // Only insert columns that exist in the table
+                $insert = $pref;
+                if (isset($insert['entities_id'])) unset($insert['entities_id']);
+                if (isset($insert['type'])) unset($insert['type']);
+                if (!$exists) {
+                    $DB->insert('glpi_displaypreferences', $insert);
+                }
+            } else {
+                $where = [
+                    'itemtype' => $pref['itemtype'],
+                    'num'      => $pref['num'],
+                    'users_id' => $pref['users_id'],
+                    'type'     => $pref['type'],
+                ];
+                if ($has_entities_id) {
+                    $where['entities_id'] = $pref['entities_id'];
+                }
+                $exists = $DB->request([
+                    'FROM'  => 'glpi_displaypreferences',
+                    'WHERE' => $where,
+                    'LIMIT' => 1
+                ])->next();
+                // Only insert columns that exist in the table
+                $insert = $pref;
+                if (!$has_entities_id && isset($insert['entities_id'])) unset($insert['entities_id']);
+                if (!$has_type && isset($insert['type'])) unset($insert['type']);
+                if (!$exists) {
+                    $DB->insert('glpi_displaypreferences', $insert);
+                }
+            }
+        }
         return true;
     }
 
@@ -171,29 +206,18 @@ class PluginDporegisterProcessing extends CommonITILObject
     {
         global $DB;
         $table = self::getTable();
-
         if ($DB->tableExists($table)) {
-
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table " . $DB->error());
+            $migration = new Migration('uninstall');
+            $migration->dropTable($table);
         }
-
         // Purge display preferences table
-        $query = "DELETE FROM `glpi_displaypreferences` WHERE `itemtype` = '" . __CLASS__ . "'";
-        $DB->query($query) or die('error purge display preferences table' . $DB->error());
-
+        DB::delete('glpi_displaypreferences', [ 'itemtype' => __CLASS__ ]);
         // Purge logs table
-        $query = "DELETE FROM `glpi_logs` WHERE `itemtype` = '" . __CLASS__ . "'";
-        $DB->query($query) or die('error purge logs table' . $DB->error());
-
+        DB::delete('glpi_logs', [ 'itemtype' => __CLASS__ ]);
         // Delete links with documents
-        $query = "DELETE FROM `glpi_documents_items` WHERE `itemtype` = '" . __CLASS__ . "'";
-        $DB->query($query) or die('error purge documents_items table' . $DB->error());
-
+        DB::delete('glpi_documents_items', [ 'itemtype' => __CLASS__ ]);
         // Delete notes associated to processings
-        $query = "DELETE FROM `glpi_notepads` WHERE `itemtype` = '" . __CLASS__ . "'";
-        $DB->query($query) or die('error purge notepads table' . $DB->error());
-
+        DB::delete('glpi_notepads', [ 'itemtype' => __CLASS__ ]);
         return true;
     }
 

@@ -67,20 +67,11 @@ class PluginDporegisterProcessing_Software extends CommonDBRelation
      */
     public static function install(Migration $migration, $version)
     {
-        global $DB;
         $table = self::getTable();
-
+        global $DB;
         if (!$DB->tableExists($table)) {
-
-            $query = "CREATE TABLE `$table` (
-                `id` int(11) NOT NULL auto_increment,
-                `" . self::$items_id_1 . "` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_plugins_dporegister_processings (id)',
-                `" . self::$items_id_2 . "` int(11) NOT NULL default '0' COMMENT 'RELATION to glpi_softwares (id)',
-                
-                PRIMARY KEY  (`id`)
-            ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-
-            $DB->query($query) or die("error creating $table " . $DB->error());
+            $migration->displayMessage(sprintf(__("Installing %s"), $table));
+            $migration->executeMigration('empty-processing_software-1.0.0.sql');
         }
         return true;
     }
