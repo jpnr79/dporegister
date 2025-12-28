@@ -285,19 +285,33 @@ class PluginDporegisterProfile extends Profile
         }
 
 
-        $profiles = $DB->request(
-            'glpi_profilerights',
-            [
-                'profiles_id' => $_SESSION['glpiactiveprofile']['id'],
-                'name'        => [
-                    'LIKE', 'plugin_dporegister_%'
+        // Only proceed if glpiactiveprofile and its id are set and not null
+        if (
+            isset($_SESSION['glpiactiveprofile']) &&
+            is_array($_SESSION['glpiactiveprofile']) &&
+            isset($_SESSION['glpiactiveprofile']['id']) &&
+            !empty($_SESSION['glpiactiveprofile']['id'])
+        ) {
+            $profiles = $DB->request(
+                'glpi_profilerights',
+                [
+                    'profiles_id' => $_SESSION['glpiactiveprofile']['id'],
+                    'name'        => [
+                        'LIKE', 'plugin_dporegister_%'
+                    ]
                 ]
-            ]
-        );
+            );
 
-        foreach ($profiles as $prof) {
-
-            $_SESSION['glpiactiveprofile'][$prof['name']] = $prof['rights'];
+            foreach ($profiles as $prof) {
+                $_SESSION['glpiactiveprofile'][$prof['name']] = $prof['rights'];
+            }
+        } else {
+            if (class_exists('Toolbox')) {
+                Toolbox::logInFile('dporegister', sprintf(
+                    'WARNING [%s:%s] glpiactiveprofile or id not set during initProfile, user=%s',
+                    __FILE__, __FUNCTION__, $_SESSION['glpiname'] ?? 'unknown'
+                ));
+            }
         }
     }
 }

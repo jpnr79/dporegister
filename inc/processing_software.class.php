@@ -85,20 +85,59 @@ class PluginDporegisterProcessing_Software extends CommonDBRelation
     {
         global $DB;
         $table = self::getTable();
-
-        if ($DB->tableExists($table)) {
-            $query = "DROP TABLE `$table`";
-            $DB->query($query) or die("error deleting $table " . $DB->error());
+        $result = true;
+        try {
+            // Use Migration for table drop
+            if (class_exists('Migration')) {
+                $migration = new Migration("uninstall-" . date('YmdHis'));
+                if ($DB->tableExists($table)) {
+                    $migration->dropTable($table);
+                    if (method_exists($migration, 'executeMigration')) {
+                        $migration->executeMigration();
+                    }
+                }
+            } else if ($DB->tableExists($table)) {
+                // Fallback: try to drop table safely
+                $DB->queryOrDie("DROP TABLE `$table`");
+            }
+        } catch (Exception $e) {
+            if (class_exists('Toolbox')) {
+                Toolbox::logInFile('dporegister', sprintf(
+                    'ERROR [%s:%s] Failed to drop table %s: %s, user=%s',
+                    __FILE__, __FUNCTION__, $table, $e->getMessage(), $_SESSION['glpiname'] ?? 'unknown'
+                ));
+            }
+            $result = false;
         }
 
         // Purge the logs table of the entries about the current class
-        $query = "DELETE FROM `glpi_logs`
-            WHERE `itemtype` = '" . __CLASS__ . "' 
-            OR `itemtype_link` = '" . self::$itemtype_1 . "'";
+        try {
+            if ($DB->tableExists('glpi_logs')) {
+                $itemtype = addslashes(__CLASS__);
+                $itemtype_link = isset(self::$itemtype_1) ? addslashes(self::$itemtype_1) : '';
+                $query = "DELETE FROM `glpi_logs` WHERE `itemtype` = '$itemtype'";
+                if ($itemtype_link) {
+                    $query .= " OR `itemtype_link` = '$itemtype_link'";
+                }
+                $DB->query($query);
+            }
+        } catch (Exception $e) {
+            if (class_exists('Toolbox')) {
+                Toolbox::logInFile('dporegister', sprintf(
+                    'ERROR [%s:%s] Failed to purge logs for %s: %s, user=%s',
+                    __FILE__, __FUNCTION__, $table, $e->getMessage(), $_SESSION['glpiname'] ?? 'unknown'
+                ));
+            }
+            $result = false;
+        }
 
-        $DB->query($query) or die("error purge logs table");
-
-        return true;
+        if (class_exists('Toolbox')) {
+            Toolbox::logInFile('dporegister', sprintf(
+                'UNINSTALL [%s:%s] Table %s uninstall attempted, result=%s, user=%s',
+                __FILE__, __FUNCTION__, $table, $result ? 'success' : 'failure', $_SESSION['glpiname'] ?? 'unknown'
+            ));
+        }
+        return $result;
     }
 
     // --------------------------------------------------------------------
