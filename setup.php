@@ -92,6 +92,10 @@ function plugin_dporegister_check_prerequisites()
 {
    // Strict version check (could be less strict, or could allow various version)
     if (version_compare(GLPI_VERSION, '9.4', 'lt')) {
+        Toolbox::logInFile('dporegister', sprintf(
+            'ERROR [%s:%s] GLPI version too low: %s, user=%s',
+            __FILE__, __FUNCTION__, GLPI_VERSION, $_SESSION['glpiname'] ?? 'unknown'
+        ));
         if (method_exists('Plugin', 'messageIncompatible')) {
             echo Plugin::messageIncompatible('core', '9.4');
         } else {
