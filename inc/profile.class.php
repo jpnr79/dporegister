@@ -292,15 +292,15 @@ class PluginDporegisterProfile extends Profile
             isset($_SESSION['glpiactiveprofile']['id']) &&
             !empty($_SESSION['glpiactiveprofile']['id'])
         ) {
-            $profiles = $DB->request(
-                'glpi_profilerights',
-                [
+            $profiles = $DB->request([
+                'FROM'  => 'glpi_profilerights',
+                'WHERE' => [
                     'profiles_id' => $_SESSION['glpiactiveprofile']['id'],
                     'name'        => [
                         'LIKE', 'plugin_dporegister_%'
                     ]
                 ]
-            );
+            ]);
 
             foreach ($profiles as $prof) {
                 $_SESSION['glpiactiveprofile'][$prof['name']] = $prof['rights'];
